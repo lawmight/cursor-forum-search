@@ -1,0 +1,62 @@
+import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
+import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
+import { Providers } from "@/components/providers";
+import "./globals.css";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+const canela = localFont({
+  src: "../public/fonts/Canela-Regular-Trial.otf",
+  variable: "--font-canela",
+  display: "swap",
+});
+
+export const metadata: Metadata = {
+  title: "Cursor Forum Search",
+  description: "Search the Cursor community forum — an AI assistant powered by Nia",
+  openGraph: {
+    title: "Cursor Forum Search",
+    description: "Search the Cursor community forum — an AI assistant powered by Nia",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Cursor Forum Search",
+    description: "Search the Cursor community forum — an AI assistant powered by Nia",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${canela.variable} antialiased`}
+      >
+        <Providers>{children}</Providers>
+        <Analytics />
+      </body>
+    </html>
+  );
+}
