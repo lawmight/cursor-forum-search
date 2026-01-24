@@ -26,13 +26,6 @@ AI-powered search assistant for the Cursor community forum, built with Next.js a
 
 This assistant searches the indexed Cursor community forum at forum.cursor.com. The forum content is indexed using [Nia](https://trynia.ai).
 
-## Tech Stack
-
-- Next.js 15 (App Router, Edge Runtime)
-- Vercel AI SDK
-- Tailwind CSS v4
-- shadcn/ui
-
 ## Docs
 
 [docs.trynia.ai](https://docs.trynia.ai)
