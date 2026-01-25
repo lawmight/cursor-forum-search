@@ -23,23 +23,23 @@ interface ModelSelectorProps {
 export function ModelSelector({ selectedModel, onModelChange }: ModelSelectorProps) {
   return (
     <Select value={selectedModel} onValueChange={(value) => onModelChange(value as SupportedModel)}>
-      <SelectTrigger className="w-auto border-0 bg-transparent focus:ring-0 focus:ring-offset-0 shadow-none h-9 px-2 cursor-pointer shrink-0">
+      <SelectTrigger className="w-auto border-0 bg-transparent focus:ring-0 focus:ring-offset-0 shadow-none h-8 px-2 cursor-pointer shrink-0 hover:bg-accent rounded-md transition-colors">
         <SelectValue>
           <div className="flex items-center gap-2">
             <Image
               src={MODEL_LOGOS[selectedModel]}
               alt={MODEL_DISPLAY_NAMES[selectedModel]}
-              width={20}
-              height={20}
+              width={18}
+              height={18}
               className="rounded-sm"
             />
-            <span className="text-sm font-medium hidden sm:inline">{MODEL_DISPLAY_NAMES[selectedModel]}</span>
+            <span className="text-sm text-muted-foreground hidden sm:inline">{MODEL_DISPLAY_NAMES[selectedModel]}</span>
           </div>
         </SelectValue>
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent className="bg-popover border-border">
         {SUPPORTED_MODELS.map((model) => (
-          <SelectItem key={model} value={model}>
+          <SelectItem key={model} value={model} className="cursor-pointer">
             <div className="flex items-center gap-2">
               <Image
                 src={MODEL_LOGOS[model]}
