@@ -3,7 +3,6 @@
 import { useChat } from "@ai-sdk/react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { ModelSelector } from "@/components/model-selector";
 import {
   ArrowUpIcon,
   SearchIcon,
@@ -27,7 +26,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Streamdown } from "streamdown";
-import { DEFAULT_MODEL, type SupportedModel } from "@/lib/constants";
+import { DEFAULT_MODEL } from "@/lib/constants";
 import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-elements/reasoning";
 
 function isRetryableError(error: Error): boolean {
@@ -199,7 +198,6 @@ function MessageActions({ message, feedback, onFeedback }: {
 
 export function Chat() {
   const [input, setInput] = useState("");
-  const [selectedModel, setSelectedModel] = useState<SupportedModel>(DEFAULT_MODEL);
   const [feedbacks, setFeedbacks] = useState<Record<string, "like" | "dislike" | null>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -310,7 +308,7 @@ export function Chat() {
         text: input,
         files,
       },
-      { body: { model: selectedModel } }
+      { body: { model: DEFAULT_MODEL } }
     );
     
     setInput("");
@@ -455,7 +453,6 @@ export function Chat() {
                 />
                 <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
                   <div className="flex items-center gap-1">
-                    <ModelSelector selectedModel={selectedModel} onModelChange={setSelectedModel} />
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -710,7 +707,6 @@ export function Chat() {
                 />
                 <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
                   <div className="flex items-center gap-1">
-                    <ModelSelector selectedModel={selectedModel} onModelChange={setSelectedModel} />
                     <Button
                       type="button"
                       variant="ghost"
