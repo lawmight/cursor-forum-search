@@ -2,6 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { ModelSelector } from "@/components/model-selector";
 import {
   ArrowUpIcon,
@@ -379,6 +380,7 @@ export function Chat() {
             >
               Forum →
             </a>
+            <ThemeToggle />
           </div>
         </div>
       </header>
