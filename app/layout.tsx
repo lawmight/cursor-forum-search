@@ -21,18 +21,60 @@ const canela = localFont({
   display: "swap",
 });
 
+const siteUrl = "https://cursor-forum.trynia.ai";
+const title = "Cursor Forum Search – AI-Powered Community Knowledge Base";
+const description =
+  "Search the Cursor community forum with AI. Find feature discussions, troubleshooting threads, tips, and community knowledge instantly. Powered by Nia.";
+
 export const metadata: Metadata = {
-  title: "Cursor Forum Search",
-  description: "Search the Cursor community forum — an AI assistant powered by Nia",
+  title: {
+    default: title,
+    template: "%s | Cursor Forum Search",
+  },
+  description,
+  keywords: [
+    "Cursor",
+    "Cursor IDE",
+    "Cursor forum",
+    "Cursor community",
+    "AI code editor",
+    "Cursor tips",
+    "Cursor troubleshooting",
+    "Cursor features",
+    "AI search",
+    "forum search",
+    "Nia",
+  ],
+  authors: [{ name: "Nozomio Labs", url: "https://github.com/nozomio-labs" }],
+  creator: "Nozomio Labs",
+  metadataBase: new URL(siteUrl),
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
-    title: "Cursor Forum Search",
-    description: "Search the Cursor community forum — an AI assistant powered by Nia",
+    title,
+    description,
+    url: siteUrl,
+    siteName: "Cursor Forum Search",
+    locale: "en_US",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Cursor Forum Search",
-    description: "Search the Cursor community forum — an AI assistant powered by Nia",
+    title,
+    description,
+    creator: "@trynia_ai",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 
