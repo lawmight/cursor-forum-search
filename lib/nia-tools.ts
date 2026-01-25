@@ -70,6 +70,25 @@ function getDefaultForumSource(): string {
   return sources[0]!;
 }
 
+/**
+ * Get Cursor docs source UUID
+ */
+function getCursorDocsSource(): string {
+  const source = process.env.NIA_CURSOR_DOCS_UUID;
+  if (!source) {
+    throw new Error("NIA_CURSOR_DOCS_UUID not configured");
+  }
+  return source;
+}
+
+/**
+ * Get Cursor docs sources as array
+ */
+export function getCursorDocsSources(): string[] {
+  const source = process.env.NIA_CURSOR_DOCS_UUID;
+  return source ? [source] : [];
+}
+
 
 /**
  * Semantic search over Cursor forum content
@@ -445,12 +464,320 @@ export const getSourceContent = tool({
   },
 });
 
+// ============================================================================
+// CURSOR DOCS TOOLS
+// ============================================================================
+
+/**
+ * Semantic search over Cursor documentation
+ */
+export const searchCursorDocs = tool({
+  description: `Search the official Cursor documentation using semantic search.
+
+Searches across indexed documentation including:
+- Getting started guides
+- Feature documentation
+- Configuration options
+- Keyboard shortcuts
+- AI features (Composer, Chat, etc.)
+- Editor settings and customization
+
+Use this to find official documentation about Cursor features and how to use them.`,
+  inputSchema: z.object({
+    query: z
+      .string()
+      .describe("The search query - a question, feature, or topic to search for in the docs"),
+  }),
+  execute: async ({ query }) => {
+    const sourceId = getCursorDocsSource();
+
+    log.tool("searchCursorDocs", { query, sourceId });
+
+    const body: Record<string, unknown> = {
+      messages: [{ role: "user", content: query }],
+      search_mode: "sources",
+      include_sources: true,
+      data_sources: [sourceId],
+    };
+
+    const response = await niaFetch("/search/query", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      log.error("searchCursorDocs", error);
+      throw new Error(`Nia API error: ${error}`);
+    }
+
+    const data = await response.json();
+    const sourcesCount = data.sources?.length || 0;
+    log.success("searchCursorDocs", `Found ${sourcesCount} sources`);
+    log.response(data);
+    return data;
+  },
+});
+
+/**
+ * Get the tree structure of the indexed Cursor documentation
+ */
+export const browseCursorDocs = tool({
+  description:
+    "Get the structure of the official Cursor documentation. Use this to explore available documentation pages and sections.",
+  inputSchema: z.object({}),
+  execute: async () => {
+    const sourceId = getCursorDocsSource();
+    log.tool("browseCursorDocs", { sourceId });
+    const response = await niaFetch(`/data-sources/${encodeURIComponent(sourceId)}/tree`);
+
+    if (!response.ok) {
+      const error = await response.text();
+      log.error("browseCursorDocs", error);
+      throw new Error(`Nia API error: ${error}`);
+    }
+
+    const data = await response.json();
+    const result = {
+      tree: data.tree_string,
+      pageCount: data.page_count,
+      baseUrl: data.base_url,
+      sourceId,
+    };
+    log.success("browseCursorDocs", `Found ${result.pageCount} pages`);
+    log.response(result);
+    return result;
+  },
+});
+
+/**
+ * Read the full content of a documentation page
+ */
+export const readCursorDocsPage = tool({
+  description:
+    "Read the full content of a specific documentation page. Use after searchCursorDocs or browseCursorDocs to get complete context.",
+  inputSchema: z.object({
+    path: z
+      .string()
+      .describe("Virtual path to read. Get paths from browseCursorDocs or search results."),
+  }),
+  execute: async ({ path }) => {
+    const sourceId = getCursorDocsSource();
+    log.tool("readCursorDocsPage", { path, sourceId });
+    const params = new URLSearchParams({ path });
+    const response = await niaFetch(
+      `/data-sources/${encodeURIComponent(sourceId)}/read?${params.toString()}`
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      log.error("readCursorDocsPage", error);
+      throw new Error(`Nia API error: ${error}`);
+    }
+
+    const data = await response.json();
+    const result = {
+      path: data.path,
+      url: data.url,
+      content: data.content,
+      metadata: data.metadata,
+      sourceId,
+    };
+    const contentLength = result.content?.length || 0;
+    log.success("readCursorDocsPage", `Read ${contentLength} chars from ${path}`);
+    return result;
+  },
+});
+
+/**
+ * Search Cursor docs using pattern matching
+ */
+export const grepCursorDocs = tool({
+  description:
+    "Search the Cursor documentation using pattern matching. Use for exact terms, setting names, keyboard shortcuts, or specific text patterns.",
+  inputSchema: z.object({
+    pattern: z
+      .string()
+      .describe("Regex pattern to search for (e.g., 'Cmd+K', 'editor.fontSize', 'Composer')"),
+    path: z
+      .string()
+      .default("/")
+      .describe("Limit search to this virtual path prefix"),
+    contextLines: z
+      .number()
+      .min(0)
+      .max(10)
+      .optional()
+      .describe("Lines before AND after each match (default: 3)"),
+    linesAfter: z
+      .number()
+      .min(0)
+      .max(20)
+      .optional()
+      .describe("Lines after each match (like grep -A). Overrides contextLines for after."),
+    linesBefore: z
+      .number()
+      .min(0)
+      .max(20)
+      .optional()
+      .describe("Lines before each match (like grep -B). Overrides contextLines for before."),
+    caseSensitive: z
+      .boolean()
+      .default(false)
+      .describe("Case-sensitive matching (default is case-insensitive)"),
+    wholeWord: z
+      .boolean()
+      .default(false)
+      .describe("Match whole words only"),
+    fixedString: z
+      .boolean()
+      .default(false)
+      .describe("Treat pattern as literal string, not regex"),
+    maxMatchesPerFile: z
+      .number()
+      .min(1)
+      .max(100)
+      .default(10)
+      .describe("Maximum matches to return per file"),
+    maxTotalMatches: z
+      .number()
+      .min(1)
+      .max(1000)
+      .default(100)
+      .describe("Maximum total matches to return"),
+    outputMode: z
+      .enum(["content", "files_with_matches", "count"])
+      .default("content")
+      .describe("Output format: content (matched lines), files_with_matches (file paths only), count (match counts)"),
+    highlight: z
+      .boolean()
+      .default(false)
+      .describe("Add >>markers<< around matched text in results"),
+    exhaustive: z
+      .boolean()
+      .default(true)
+      .describe("Search ALL chunks for complete results (true = like real grep, false = faster BM25 pre-filter)"),
+  }),
+  execute: async ({
+    pattern,
+    path,
+    contextLines,
+    linesAfter,
+    linesBefore,
+    caseSensitive,
+    wholeWord,
+    fixedString,
+    maxMatchesPerFile,
+    maxTotalMatches,
+    outputMode,
+    highlight,
+    exhaustive,
+  }) => {
+    const sourceId = getCursorDocsSource();
+    log.tool("grepCursorDocs", { pattern, path, sourceId, outputMode, exhaustive });
+
+    // Build request body, only including defined values
+    const requestBody: Record<string, unknown> = {
+      pattern,
+      context_lines: contextLines ?? 3,
+    };
+
+    if (path) requestBody.path = path;
+    if (linesAfter !== undefined) requestBody.A = linesAfter;
+    if (linesBefore !== undefined) requestBody.B = linesBefore;
+    if (caseSensitive !== undefined) requestBody.case_sensitive = caseSensitive;
+    if (wholeWord !== undefined) requestBody.whole_word = wholeWord;
+    if (fixedString !== undefined) requestBody.fixed_string = fixedString;
+    if (maxMatchesPerFile !== undefined) requestBody.max_matches_per_file = maxMatchesPerFile;
+    if (maxTotalMatches !== undefined) requestBody.max_total_matches = maxTotalMatches;
+    if (outputMode) requestBody.output_mode = outputMode;
+    if (highlight !== undefined) requestBody.highlight = highlight;
+    if (exhaustive !== undefined) requestBody.exhaustive = exhaustive;
+
+    const response = await niaFetch(`/data-sources/${encodeURIComponent(sourceId)}/grep`, {
+      method: "POST",
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      log.error("grepCursorDocs", error);
+      throw new Error(`Nia API error: ${error}`);
+    }
+
+    const data = await response.json();
+    const result = {
+      matches: data.matches,
+      files: data.files,
+      counts: data.counts,
+      pattern: data.pattern,
+      pathFilter: data.path_filter,
+      totalMatches: data.total_matches,
+      filesSearched: data.files_searched,
+      filesWithMatches: data.files_with_matches,
+      truncated: data.truncated,
+      options: data.options,
+      sourceId,
+    };
+    log.success("grepCursorDocs", `Found ${result.totalMatches} matches in ${result.filesWithMatches || result.filesSearched} files`);
+    log.response(result);
+    return result;
+  },
+});
+
+/**
+ * Get full content by path from Cursor docs
+ */
+export const getCursorDocsContent = tool({
+  description:
+    "Retrieve the full content of a specific documentation page. Use this when you have a path from searchCursorDocs results.",
+  inputSchema: z.object({
+    path: z
+      .string()
+      .describe("The virtual path (from search results or browseCursorDocs)"),
+  }),
+  execute: async ({ path }) => {
+    const sourceId = getCursorDocsSource();
+    log.tool("getCursorDocsContent", { path, sourceId });
+
+    const params = new URLSearchParams({ path });
+    const response = await niaFetch(
+      `/data-sources/${encodeURIComponent(sourceId)}/read?${params.toString()}`
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      log.error("getCursorDocsContent", error);
+      throw new Error(`Nia API error: ${error}`);
+    }
+
+    const data = await response.json();
+    const contentLength = data.content?.length || 0;
+    log.success("getCursorDocsContent", `Retrieved ${contentLength} chars from ${path}`);
+    return {
+      success: data.success,
+      path: data.path,
+      url: data.url,
+      content: data.content,
+      metadata: data.metadata,
+    };
+  },
+});
+
 // Export all tools as a single object for easy use
 export const niaCursorTools = {
+  // Forum tools
   searchForum,
   browseForum,
   readForumPost,
   grepForum,
-  webSearch,
   getSourceContent,
+  // Docs tools
+  searchCursorDocs,
+  browseCursorDocs,
+  readCursorDocsPage,
+  grepCursorDocs,
+  getCursorDocsContent,
+  // General tools
+  webSearch,
 };

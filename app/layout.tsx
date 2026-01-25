@@ -22,14 +22,14 @@ const canela = localFont({
 });
 
 const siteUrl = "https://cursor-forum.trynia.ai";
-const title = "Cursor Forum Search – AI-Powered Community Knowledge Base";
+const title = "Cursor Forum & Docs Search – AI-Powered Knowledge Base";
 const description =
   "Search the Cursor community forum with AI. Find feature discussions, troubleshooting threads, tips, and community knowledge instantly. Powered by Nia.";
 
 export const metadata: Metadata = {
   title: {
     default: title,
-    template: "%s | Cursor Forum Search",
+    template: "%s | Cursor Forum & Docs Search",
   },
   description,
   keywords: [
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     title,
     description,
     url: siteUrl,
-    siteName: "Cursor Forum Search",
+    siteName: "Cursor Forum & Docs Search",
     locale: "en_US",
     type: "website",
   },

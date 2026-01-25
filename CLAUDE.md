@@ -31,16 +31,28 @@ bun run type-check # TypeScript checking
 - `components/chat.tsx` - Main chat interface
 
 ### Nia Tools
+
+#### Documentation Tools
+- **searchCursorDocs**: Semantic search across official docs
+- **browseCursorDocs**: Navigate docs structure
+- **readCursorDocsPage**: Read full docs page content
+- **grepCursorDocs**: Pattern matching search in docs
+- **getCursorDocsContent**: Fetch full content from docs results
+
+#### Forum Tools
 - **searchForum**: Semantic search across forum content
 - **browseForum**: Navigate forum structure
 - **readForumPost**: Read full post/thread content
-- **grepForum**: Pattern matching search
+- **grepForum**: Pattern matching search in forum
+- **getSourceContent**: Fetch full content from forum results
+
+#### General Tools
 - **webSearch**: External web search (use sparingly)
-- **getSourceContent**: Fetch full content from results
 
 ### Environment Variables
 ```
 NIA_API_KEY              # Nia API key
 AI_GATEWAY_API_KEY       # AI provider gateway key
 NIA_CURSOR_FORUM_SOURCES # Indexed Cursor forum UUID
+NIA_CURSOR_DOCS_UUID     # Indexed Cursor docs UUID
 ```

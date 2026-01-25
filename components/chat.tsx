@@ -400,7 +400,7 @@ export function Chat() {
                 Powered by Nia
               </a>
               <h1 className="text-3xl sm:text-4xl font-semibold text-foreground tracking-tight">
-                Search Cursor Forum
+                Search Cursor Forum & Docs
               </h1>
               <p className="text-muted-foreground max-w-md mx-auto">
                 Find answers from feature discussions, troubleshooting threads, and community knowledge.
