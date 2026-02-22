@@ -132,9 +132,9 @@ export async function POST(req: Request) {
 
     // Token usage and completion tracking
     onFinish: async ({ usage, finishReason, response, steps }) => {
-      const actualModel = response?.model ?? DEFAULT_MODEL;
-      if (response?.model) {
-        console.log("📌 [OPENROUTER] actual model used:", response.model);
+      const actualModel = response?.modelId ?? DEFAULT_MODEL;
+      if (response?.modelId) {
+        console.log("📌 [OPENROUTER] actual model used:", response.modelId);
       }
 
       // Extract tool names from the response (safely handle undefined)
