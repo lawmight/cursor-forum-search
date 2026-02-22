@@ -118,7 +118,6 @@ export async function POST(req: Request) {
     messages: convertToModelMessages(filteredMessages),
     tools: niaCursorTools,
     stopWhen: stepCountIs(20),
-    streamOptions: { includeUsage: true },
 
     // Telemetry for observability (experimental)
     experimental_telemetry: {
