@@ -1,6 +1,6 @@
 import { convertToModelMessages, streamText, stepCountIs, type UIMessage } from "ai";
 import { DEFAULT_MODEL } from "@/lib/constants";
-import { gateway } from "@/lib/gateway";
+import { openrouter } from "@/lib/gateway";
 import { niaCursorTools } from "@/lib/nia-tools";
 
 export const runtime = "edge";
@@ -98,23 +98,8 @@ You MUST use tools to ground every response in actual content. Do NOT answer fro
 - If you cannot find information, suggest what search terms might help.`;
 
 export async function POST(req: Request) {
-  const { messages, model }: { messages: UIMessage[]; model?: string } = await req.json();
-  
-  const selectedModel = model || DEFAULT_MODEL;
+  const { messages, model: _model }: { messages: UIMessage[]; model?: string } = await req.json();
   const startTime = Date.now();
-
-  // Enable extended thinking for Anthropic Claude models
-  const isAnthropic = selectedModel.startsWith("anthropic/");
-  const providerOptions = isAnthropic
-    ? {
-        anthropic: {
-          thinking: {
-            type: "enabled" as const,
-            budgetTokens: 10000,
-          },
-        },
-      }
-    : undefined;
 
   // Filter out reasoning content from previous assistant messages to avoid conversion issues
   const filteredMessages = messages.map((msg) => {
@@ -128,42 +113,46 @@ export async function POST(req: Request) {
   });
 
   const result = streamText({
-    model: gateway(selectedModel),
+    model: openrouter(DEFAULT_MODEL),
     system: CURSOR_FORUM_SYSTEM_PROMPT,
     messages: convertToModelMessages(filteredMessages),
     tools: niaCursorTools,
     stopWhen: stepCountIs(20),
-    providerOptions,
-    maxOutputTokens: isAnthropic ? 16000 : undefined,
-    
+    streamOptions: { includeUsage: true },
+
     // Telemetry for observability (experimental)
     experimental_telemetry: {
       isEnabled: true,
       functionId: "cursor-forum-chat",
       metadata: {
-        model: selectedModel,
+        model: DEFAULT_MODEL,
       },
       recordInputs: true,
       recordOutputs: true,
     },
-    
+
     // Token usage and completion tracking
     onFinish: async ({ usage, finishReason, response, steps }) => {
+      const actualModel = response?.model ?? DEFAULT_MODEL;
+      if (response?.model) {
+        console.log("📌 [OPENROUTER] actual model used:", response.model);
+      }
+
       // Extract tool names from the response (safely handle undefined)
       const toolsUsed = response?.messages
         ?.filter((m) => m.role === "assistant")
-        ?.flatMap((m) => 
-          Array.isArray(m.content) 
+        ?.flatMap((m) =>
+          Array.isArray(m.content)
             ? m.content.filter((c) => c.type === "tool-call").map((c) => c.toolName)
             : []
         )
         ?.filter((name): name is string => Boolean(name)) ?? [];
-      
+
       // Remove duplicates
       const uniqueTools = [...new Set(toolsUsed)];
-      
+
       await trackUsage({
-        model: selectedModel,
+        model: actualModel,
         inputTokens: usage?.inputTokens ?? 0,
         outputTokens: usage?.outputTokens ?? 0,
         totalTokens: (usage?.inputTokens ?? 0) + (usage?.outputTokens ?? 0),
@@ -173,10 +162,10 @@ export async function POST(req: Request) {
         stepCount: steps?.length ?? 0,
       });
     },
-    
+
     onError: (e) => {
       console.error("❌ [STREAM ERROR]", {
-        model: selectedModel,
+        model: DEFAULT_MODEL,
         duration: `${Date.now() - startTime}ms`,
         error: e,
       });

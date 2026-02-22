@@ -1,5 +1,5 @@
-import { createGatewayProvider } from "@ai-sdk/gateway";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 
-export const gateway = createGatewayProvider({
-  baseURL: process.env.AI_GATEWAY_BASE_URL,
+export const openrouter = createOpenRouter({
+  apiKey: process.env.OPENROUTER_API_KEY,
 });
