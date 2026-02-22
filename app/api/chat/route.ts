@@ -98,7 +98,7 @@ You MUST use tools to ground every response in actual content. Do NOT answer fro
 - If you cannot find information, suggest what search terms might help.`;
 
 export async function POST(req: Request) {
-  const { messages, model: _model }: { messages: UIMessage[]; model?: string } = await req.json();
+  const { messages }: { messages: UIMessage[]; model?: string } = await req.json();
   const startTime = Date.now();
 
   // Filter out reasoning content from previous assistant messages to avoid conversion issues
