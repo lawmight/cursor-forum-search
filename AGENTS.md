@@ -31,3 +31,5 @@ Without these keys, the UI loads and functions but chat submissions return "Miss
 
 - Both `pnpm-lock.yaml` and `bun.lock` exist. Use `pnpm` (matches `packageManager` field in `package.json`).
 - The chat API route uses edge runtime (`export const runtime = "edge"`), so Node.js-only APIs are not available in that route.
+- If you run `pnpm run build` and then `pnpm run dev`, the stale `.next` build cache can cause 500 errors on API routes. Fix by deleting `.next` before starting dev: `rm -rf .next && pnpm run dev`.
+- Kill all existing `next-server` processes before restarting the dev server to avoid port conflicts: `lsof -ti :3000 | xargs kill -9 2>/dev/null`.
